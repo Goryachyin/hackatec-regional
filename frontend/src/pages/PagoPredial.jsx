@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, FileText } from "lucide-react";
 import { UploadBox } from "../components/Documents";
+import PredialPaymentPreview from "../components/PredialPaymentPreview";
 
 export default function PagoPredial({ email, navigate }) {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
+  const [showPayment, setShowPayment] = useState(false);
   return (
     <>
       <button
@@ -23,7 +25,7 @@ export default function PagoPredial({ email, navigate }) {
           </p>
         </div>
       </div>
-      <section className="panel">
+      {showPayment ? <PredialPaymentPreview email={email} filename={file?.name} onBack={() => setShowPayment(false)}/> : <section className="panel">
         <h3 className="mb-4">Documento con clave catastral</h3>
         <UploadBox
           kind="clave_catastral"
@@ -66,11 +68,15 @@ export default function PagoPredial({ email, navigate }) {
           />
         </label>
         <div className="flex justify-end mt-6">
-          <button type="button" className="primary">
+          <button type="button" className="primary" onClick={() => {
+            if (!file) { setError('Selecciona un documento para continuar a la vista de pago.'); return; }
+            setError('');
+            setShowPayment(true);
+          }}>
             Continuar <ArrowRight size={17} />
           </button>
         </div>
-      </section>
+      </section>}
     </>
   );
 }
