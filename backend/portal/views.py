@@ -15,7 +15,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.db.models import F
 from django.http import FileResponse, JsonResponse
 from django.middleware.csrf import get_token
@@ -29,6 +29,17 @@ from .idp import IDPError, inspect_document
 class ApiError(Exception):
     def __init__(self, message, status=400):
         self.message, self.status = message, status
+
+
+def health(request):
+    if request.method != 'GET':
+        return JsonResponse({'status': 'method_not_allowed'}, status=405)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+    except Exception:
+        return JsonResponse({'status': 'unavailable'}, status=503)
+    return JsonResponse({'status': 'ok'})
 
 
 def endpoint(methods, private=True):

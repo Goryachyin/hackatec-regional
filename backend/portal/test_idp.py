@@ -30,12 +30,24 @@ def accepted(kind='ine'):
 class IDPIntegrationTests(TestCase):
     def setUp(self):
         self.media = tempfile.TemporaryDirectory()
-        self.settings_override = override_settings(MEDIA_ROOT=self.media.name)
+        self.settings_override = override_settings(
+            MEDIA_ROOT=self.media.name,
+            STORAGES={
+                'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+                'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+            },
+        )
         self.settings_override.enable()
         self.addCleanup(self.settings_override.disable)
         self.addCleanup(self.media.cleanup)
         self.user = User.objects.create_user(username='test@example.invalid', email='test@example.invalid', curp='PEPF900101HGRRRC09', password='test-pass-123', email_verified=True)
         self.client.force_login(self.user)
+
+    def test_health_is_public_and_checks_database(self):
+        self.client.logout()
+        response = self.client.get('/api/health/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'status': 'ok'})
 
     def create_document(self, kind='ine', app=None):
         with patch('portal.views.inspect_document', return_value=accepted(kind)):
