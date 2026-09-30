@@ -337,7 +337,7 @@ def download(request, doc_id):
 @endpoint(['GET', 'POST'])
 def applications(request):
     if request.method == 'GET':
-        return JsonResponse({'applications': [application_data(a) for a in Application.objects.filter(owner=request.user).order_by('-created_at')]})
+        return JsonResponse({'applications': [application_data(a) for a in Application.objects.filter(owner=request.user, submitted_at__isnull=False).exclude(status='draft').order_by('-submitted_at')]})
     procedure = field(body(request), 'procedure')
     if procedure not in CATALOG_BY_ID:
         raise ApiError('Trámite no disponible.')

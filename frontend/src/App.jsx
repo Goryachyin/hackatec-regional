@@ -1,47 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  ArrowDownToLine,
-  ArrowLeft,
-  ArrowRight,
-  Building2,
-  Check,
-  CheckCircle2,
-  ChevronRight,
-  ClipboardList,
-  Clock3,
-  FileText,
-  FolderLock,
-  Hammer,
-  LayoutGrid,
-  LoaderCircle,
-  LockKeyhole,
-  LogOut,
-  Mail,
-  Plus,
-  Search,
-  ShieldCheck,
-  Store,
-  UploadCloud,
-  Waves,
-  X,
-} from "lucide-react";
+import Inicio from "./pages/Inicio";
+import Tramites from "./pages/Tramites";
+import MiBaul from "./pages/MiBaul";
+import MisSolicitudes from "./pages/MisSolicitudes";
+import { AnalysisResult, UploadBox } from "./components/Documents";
+import { useEffect, useState } from "react";
+import { Home, ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronRight, ClipboardList, FileText, FolderLock, LayoutGrid, LoaderCircle, LockKeyhole, LogOut, ShieldCheck, Waves, X } from "lucide-react";
 import { api } from "./api";
 
-const icons = {
-  predial: Building2,
-  funcionamiento: Store,
-  construccion: Hammer,
-};
-const date = (value) =>
-  new Date(value).toLocaleDateString("es-MX", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-const bytes = (value) =>
-  value < 1024 * 1024
-    ? `${Math.ceil(value / 1024)} KB`
-    : `${(value / 1024 / 1024).toFixed(1)} MB`;
+import { date } from "./utils/format";
 
 function Brand() {
   return (
@@ -50,7 +16,7 @@ function Brand() {
         <Waves size={25} />
       </span>
       <span>
-        acapulco<span className="brand-sub">PORTAL CIUDADANO</span>
+        ACAPULCO<span className="brand-sub">PORTAL CIUDADANO</span>
       </span>
     </div>
   );
@@ -287,72 +253,10 @@ function Auth({ onSuccess }) {
   );
 }
 
-function AnalysisResult({ doc, busy, onAnalyze }) {
-  const result = doc.analysis || {};
-  return <div className="mt-4 text-sm" aria-live="polite">
-    <span className={`badge ${doc.analysis_status === 'accepted' ? '' : 'draft'}`}>
-      {doc.analysis_status === 'accepted' ? 'Campos mínimos comprobados' : doc.analysis_status === 'not_analyzed' ? 'Pendiente de análisis' : 'Requiere corrección'}
-    </span>
-    {result.message && <p className="muted mt-3">{result.message}</p>}
-    {result.extracted_data && <details className="mt-3">
-      <summary className="cursor-pointer text-[#315e4f]">Ver datos extraídos</summary>
-      <dl className="mt-2 space-y-2 break-words">{Object.entries(result.extracted_data).filter(([key]) => key !== 'nombre' || !('nombre_completo' in result.extracted_data)).map(([key, value]) => <div key={key}><dt className="text-xs muted">{key.replaceAll('_', ' ')}</dt><dd>{value || 'No identificado'}</dd></div>)}</dl>
-    </details>}
-    {onAnalyze && <button type="button" className="text-button mt-3" disabled={busy} onClick={() => onAnalyze(doc)}>{busy ? <Spinner/> : <Search size={15}/>} {doc.analysis_status === 'not_analyzed' ? 'Analizar documento' : 'Volver a analizar'}</button>}
-  </div>;
-}
-
-function DocumentActions({ doc, busy, onUpdate, onDelete, canUpdate }) {
-  const input = useRef();
-  return <div className="mt-3 flex flex-wrap gap-3">
-    {canUpdate && <>
-      <input ref={input} type="file" hidden accept=".pdf,.jpg,.jpeg,.png" disabled={busy}
-        aria-label={`Actualizar ${doc.name}`} onChange={(e) => {
-          const file = e.target.files[0];
-          if (file) onUpdate(doc, file);
-          e.target.value = '';
-        }}/>
-      <button type="button" className="text-button" disabled={busy} onClick={() => input.current.click()}>Actualizar documento</button>
-    </>}
-    <button type="button" className="text-button" disabled={busy} onClick={() => onDelete(doc)}>Eliminar documento</button>
-  </div>;
-}
-
-function UploadBox({ kind, title, onUpload, busy }) {
-  const input = useRef();
-  return (
-    <div className="upload-box">
-      <UploadCloud size={26} />
-      <strong>{title || "Selecciona tu documento"}</strong>
-      <span>PDF, JPG o PNG · Máximo 10 MB · PDF hasta 10 páginas</span>
-      <input
-        ref={input}
-        aria-label={`Archivo ${title || kind}`}
-        type="file"
-        accept=".pdf,.jpg,.jpeg,.png"
-        disabled={busy}
-        onChange={(e) => {
-          const file = e.target.files[0];
-          if (file) onUpload(kind, file);
-          e.target.value = "";
-        }}
-      />
-      <button
-        type="button"
-        className="secondary"
-        disabled={busy}
-        onClick={() => input.current.click()}
-      >
-        {busy ? <Spinner /> : <Plus size={16} />} {busy ? 'Procesando…' : 'Seleccionar archivo'}
-      </button>
-    </div>
-  );
-}
-
 export default function App() {
   const [user, setUser] = useState(null),
     [ready, setReady] = useState(false);
-  const [page, setPage] = useState("catalog"),
+  const [page, setPage] = useState("home"),
     [catalog, setCatalog] = useState([]),
     [types, setTypes] = useState({});
   const [docs, setDocs] = useState([]),
@@ -367,6 +271,7 @@ export default function App() {
     [showUpload, setShowUpload] = useState(false);
   const [reference, setReference] = useState("");
   const [cancelDialog, setCancelDialog] = useState(false);
+  const [cancelDestination, setCancelDestination] = useState("applications");
 
   useEffect(() => {
     api("auth/session/")
@@ -405,7 +310,12 @@ export default function App() {
       setBusy(false);
     }
   }
-  function navigate(next) {
+  function navigate(next, discarded = false) {
+    if (!discarded && active?.status === "draft") {
+      setCancelDestination(next);
+      setCancelDialog(true);
+      return;
+    }
     setPage(next);
     setActive(null);
     setError("");
@@ -529,14 +439,12 @@ export default function App() {
       <aside className="sidebar">
         <Brand />
         <div className="municipality">
-          <span className="status-dot" />
-          Acapulco de Juárez<small>Guerrero, México</small>
         </div>
-        <span className="nav-label">MI ESPACIO</span>
         <nav>
           {[
+            ["home", Home, "Inicio"],
             ["catalog", LayoutGrid, "Trámites"],
-            ["vault", FolderLock, "Mi Baúl"],
+            ["vault", FolderLock, "Mis Documentos"],
             ["applications", ClipboardList, "Mis solicitudes"],
           ].map(([id, Icon, label]) => (
             <button
@@ -558,9 +466,6 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-note">
-          <ShieldCheck size={24} />
-          <strong>Tu información, en tu espacio</strong>
-          <p>Reutiliza tus documentos sin cargarlos en cada solicitud.</p>
         </div>
         <div className="sidebar-bottom">
           <span className="avatar">{user.email[0].toUpperCase()}</span>
@@ -573,12 +478,16 @@ export default function App() {
             aria-label="Cerrar sesión"
             onClick={() =>
               action(async () => {
+                if (active?.status === "draft") {
+                  if (!window.confirm("La solicitud no se ha enviado y se descartará al cerrar sesión. ¿Continuar?")) return;
+                  await api(`applications/${active.id}/`, { method: "DELETE" });
+                }
                 await api("auth/logout/", { method: "POST" });
                 setUser(null);
                 setDocs([]);
                 setApps([]);
                 setActive(null);
-                setPage("catalog");
+                setPage("home");
               })
             }
           >
@@ -595,7 +504,7 @@ export default function App() {
                 ? "Mi Baúl"
                 : page === "applications" || page === "request"
                   ? "Mis solicitudes"
-                  : "Trámites"}
+                  : page === "home" ? "Inicio" : "Trámites"}
             </strong>
           </span>
           <span className="prototype">ENTORNO DE PRUEBAS</span>
@@ -620,325 +529,10 @@ export default function App() {
               <Spinner /> Cargando tu información…
             </div>
           )}
-          {page === "catalog" && (
-            <>
-              <section className="hero">
-                <div className="hero-content">
-                  <span className="eyebrow">
-                    MENOS VUELTAS. MÁS TIEMPO PARA TI.
-                  </span>
-                  <h1>
-                    Tu ciudad.
-                    <br />
-                    <em>Tus trámites, más simples.</em>
-                  </h1>
-                  <p>
-                    Encuentra lo que necesitas, prepara tus documentos
-                    <br className="desktop-break" /> y sigue cada paso desde un
-                    mismo lugar.
-                  </p>
-                  <button className="primary" onClick={() => navigate("vault")}>
-                    <FolderLock size={17} /> Preparar mi Baúl{" "}
-                    <ArrowRight size={17} />
-                  </button>
-                </div>
-                <div className="hero-art" aria-hidden="true">
-                  <div className="orbit orbit-one" />
-                  <div className="orbit orbit-two" />
-                  <div className="art-card">
-                    <div className="art-icon">
-                      <FileText size={34} />
-                    </div>
-                    <span className="art-line" />
-                    <span className="art-line short" />
-                    <div className="art-check">
-                      <Check size={24} />
-                    </div>
-                  </div>
-                  <span className="art-tag">
-                    <ShieldCheck size={15} /> Tu espacio digital
-                  </span>
-                  <Waves className="art-waves" size={140} />
-                </div>
-              </section>
-              <section className="stats-grid">
-                <div>
-                  <span className="stat-icon">
-                    <FolderLock />
-                  </span>
-                  <p>
-                    <strong>{docs.length}</strong>
-                    <span>Documentos en tu Baúl</span>
-                  </p>
-                  <button
-                    aria-label="Ver Baúl"
-                    onClick={() => navigate("vault")}
-                  >
-                    <ArrowRight size={19} />
-                  </button>
-                </div>
-                <div>
-                  <span className="stat-icon warm">
-                    <ClipboardList />
-                  </span>
-                  <p>
-                    <strong>{pending}</strong>
-                    <span>Solicitudes enviadas</span>
-                  </p>
-                  <button
-                    aria-label="Ver solicitudes"
-                    onClick={() => navigate("applications")}
-                  >
-                    <ArrowRight size={19} />
-                  </button>
-                </div>
-                <div>
-                  <span className="stat-icon blue">
-                    <LayoutGrid />
-                  </span>
-                  <p>
-                    <strong>{catalog.length}</strong>
-                    <span>Trámites disponibles</span>
-                  </p>
-                </div>
-              </section>
-              <section>
-                <div className="section-heading">
-                  <div>
-                    <span className="eyebrow">¿QUÉ NECESITAS HACER HOY?</span>
-                    <h2>Catálogo de trámites</h2>
-                  </div>
-                  <label className="search">
-                    <Search size={17} />
-                    <input
-                      aria-label="Buscar un trámite"
-                      placeholder="Buscar un trámite…"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className="procedure-grid">
-                  {catalog
-                    .filter((p) =>
-                      p.name
-                        .toLowerCase()
-                        .normalize("NFD")
-                        .replace(/[\u0300-\u036f]/g, "")
-                        .includes(
-                          query
-                            .toLowerCase()
-                            .normalize("NFD")
-                            .replace(/[\u0300-\u036f]/g, ""),
-                        ),
-                    )
-                    .map((p, i) => {
-                      const Icon = icons[p.id];
-                      return (
-                        <article className="procedure-card" key={p.id}>
-                          <div className="flex justify-between items-center">
-                            <span className={`procedure-icon color-${i}`}>
-                              <Icon size={26} />
-                            </span>
-                            <span className="category">{p.category}</span>
-                          </div>
-                          <h3>{p.name}</h3>
-                          <p>{p.description}</p>
-                          <div className="requirements">
-                            <FileText size={15} />
-                            {p.requirements.length} tipos de documento
-                          </div>
-                          <button
-                            disabled={busy || loading}
-                            onClick={() => start(p.id)}
-                          >
-                            Iniciar solicitud <ArrowRight size={18} />
-                          </button>
-                        </article>
-                      );
-                    })}
-                </div>
-                {catalog.length > 0 &&
-                  !catalog.some((p) =>
-                    p.name.toLowerCase().includes(query.toLowerCase()),
-                  ) &&
-                  query && (
-                    <p className="muted mt-3">
-                      Puedes buscar por predial, funcionamiento o construcción.
-                    </p>
-                  )}
-              </section>
-              <section className="how-banner">
-                <span className="round-icon">
-                  <FolderLock />
-                </span>
-                <div>
-                  <h3>Un Baúl. Todos tus documentos.</h3>
-                  <p>
-                    Cárgalos una vez y reutilízalos cuando inicies una
-                    solicitud.
-                  </p>
-                </div>
-                <button
-                  className="text-button"
-                  onClick={() => navigate("vault")}
-                >
-                  Conocer mi Baúl <ArrowRight size={17} />
-                </button>
-              </section>
-            </>
-          )}
-          {page === "vault" && (
-            <>
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">TU ARCHIVO PERSONAL</span>
-                  <h1>Mi Baúl</h1>
-                  <p className="muted">
-                    Tus documentos disponibles para próximas solicitudes.
-                  </p>
-                </div>
-                <button
-                  className="primary"
-                  onClick={() => setShowUpload(!showUpload)}
-                  disabled={busy}
-                >
-                  <Plus size={17} /> Agregar documento
-                </button>
-              </div>
-              {showUpload && (
-                <section className="panel mb-6">
-                  <div className="section-heading">
-                    <h3>Guardar un documento</h3>
-                    <button
-                      aria-label="Cerrar carga"
-                      onClick={() => setShowUpload(false)}
-                      disabled={busy}
-                    >
-                      <X />
-                    </button>
-                  </div>
-                  <label className="max-w-md mb-4">
-                    Tipo de documento
-                    <select
-                      value={uploadKind}
-                      onChange={(e) => setUploadKind(e.target.value)}
-                    >
-                      {Object.entries(types).map(([id, name]) => (
-                        <option key={id} value={id}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <UploadBox kind={uploadKind} onUpload={upload} busy={busy} />
-                  <p className="muted text-sm mt-3">
-                    Se analiza localmente el tipo y los campos mínimos antes de guardarlo.
-                    Esta revisión no acredita autenticidad oficial.
-                  </p>
-                </section>
-              )}
-              {docs.length ? (
-                <div className="document-grid">
-                  {docs.map((doc) => (
-                    <article className="document-card" key={doc.id}>
-                      <span className="procedure-icon color-0">
-                        <FileText />
-                      </span>
-                      <span className="badge">En el Baúl</span>
-                      <h3>{types[doc.kind] || `Documento anterior (${doc.kind})`}</h3>
-                      <p title={doc.name} className="truncate">
-                        {doc.name}
-                      </p>
-                      <small>
-                        {bytes(doc.size)} · {date(doc.created_at)}
-                      </small>
-                      <a href={doc.url}>
-                        <ArrowDownToLine size={16} /> Descargar
-                      </a>
-                      <AnalysisResult doc={doc} busy={busy} onAnalyze={types[doc.kind] ? reanalyzeDocument : null}/>
-                      <DocumentActions doc={doc} busy={busy} canUpdate={Boolean(types[doc.kind])} onUpdate={updateDocument} onDelete={deleteDocument}/>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <FolderLock size={42} />
-                  <h2>Tu Baúl está listo para empezar</h2>
-                  <p>
-                    Agrega tu primer documento o guárdalo al completar una
-                    solicitud.
-                  </p>
-                  <button
-                    className="primary"
-                    onClick={() => setShowUpload(true)}
-                  >
-                    <Plus size={17} /> Agregar mi primer documento
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-          {page === "applications" && (
-            <>
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">CADA PASO, EN UN SOLO LUGAR</span>
-                  <h1>Mis solicitudes</h1>
-                  <p className="muted">
-                    Continúa tus borradores y consulta los folios de recepción.
-                  </p>
-                </div>
-                <button
-                  className="secondary"
-                  onClick={() => navigate("catalog")}
-                >
-                  <Plus size={17} /> Nueva solicitud
-                </button>
-              </div>
-              {apps.length ? (
-                <div className="applications-list">
-                  {apps.map((app) => (
-                    <button
-                      disabled={busy}
-                      className="application-row"
-                      key={app.id}
-                      onClick={() => open(app)}
-                    >
-                      <span className="procedure-icon color-0">
-                        <FileText />
-                      </span>
-                      <span className="grow min-w-0">
-                        <strong>{app.name}</strong>
-                        <small className="break-all">
-                          {app.folio || "Borrador sin enviar"} ·{" "}
-                          {date(app.created_at)}
-                        </small>
-                      </span>
-                      <span
-                        className={`badge ${app.status === "draft" ? "draft" : ""}`}
-                      >
-                        {app.status === "draft" ? "Borrador" : "Recibida"}
-                      </span>
-                      <ChevronRight size={18} />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <ClipboardList size={42} />
-                  <h2>Aquí comienza tu seguimiento</h2>
-                  <p>Al iniciar un trámite encontrarás aquí su avance.</p>
-                  <button
-                    className="primary"
-                    onClick={() => navigate("catalog")}
-                  >
-                    Explorar trámites <ArrowRight size={17} />
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+          {page === "home" && <Inicio docs={docs} pending={pending} catalog={catalog} apps={apps} navigate={navigate} open={open} busy={busy} />}
+          {page === "catalog" && <Tramites catalog={catalog} query={query} setQuery={setQuery} busy={busy} loading={loading} start={start} navigate={navigate} />}
+          {page === "vault" && <MiBaul docs={docs} types={types} showUpload={showUpload} setShowUpload={setShowUpload} uploadKind={uploadKind} setUploadKind={setUploadKind} upload={upload} busy={busy} reanalyzeDocument={reanalyzeDocument} updateDocument={updateDocument} deleteDocument={deleteDocument} />}
+          {page === "applications" && <MisSolicitudes apps={apps} busy={busy} navigate={navigate} open={open} />}
           {page === "request" && active && procedure && (
             <>
               <button
@@ -957,7 +551,7 @@ export default function App() {
                   className={`badge ${active.status === "draft" ? "draft" : ""}`}
                 >
                   {active.status === "draft"
-                    ? "Borrador"
+                    ? "Sin enviar"
                     : "Solicitud recibida"}
                 </span>
               </div>
@@ -990,7 +584,7 @@ export default function App() {
                       className="secondary"
                       onClick={() => navigate("vault")}
                     >
-                      Ir a mi Baúl
+                      Ir a mis documentos
                     </button>
                   </div>
                 </section>
@@ -1092,18 +686,7 @@ export default function App() {
                               </select>
                             </label>
                           )}
-                          <div className="mt-4">
-                            <UploadBox
-                              kind={kind}
-                              title={
-                                doc
-                                  ? "Reemplazar con otro archivo"
-                                  : `Agregar ${types[kind]}`
-                              }
-                              onUpload={(k, f) => upload(k, f, active.id)}
-                              busy={busy}
-                            />
-                          </div>
+                          
                         </div>
                       );
                     })}
@@ -1113,33 +696,11 @@ export default function App() {
                       type="button"
                       className="danger-link"
                       disabled={busy}
-                      onClick={() => setCancelDialog(true)}
+                      onClick={() => { setCancelDestination("applications"); setCancelDialog(true); }}
                     >
-                      Cancelar borrador
+                      Cancelar solicitud
                     </button>
                     <div className="flex gap-3 flex-wrap">
-                      <button
-                        type="button"
-                        className="secondary"
-                        disabled={busy}
-                        onClick={() =>
-                          action(async () => {
-                            setActive(
-                              (
-                                await api(`applications/${active.id}/`, {
-                                  method: "PATCH",
-                                  data: { reference },
-                                })
-                              ).application,
-                            );
-                            setNotice(
-                              "Borrador guardado. Los archivos siguen siendo temporales.",
-                            );
-                          })
-                        }
-                      >
-                        Guardar borrador
-                      </button>
                       <button className="primary" disabled={busy || !complete}>
                         {busy ? <Spinner /> : <ArrowRight size={17} />} Enviar
                         solicitud
@@ -1150,15 +711,6 @@ export default function App() {
               )}
             </>
           )}
-          <footer className="footer">
-            <span>
-              <ShieldCheck size={15} /> Prototipo · Acapulco de Juárez
-            </span>
-            <p>
-              Requisitos demostrativos. Sin conexión municipal, cobros reales ni
-              validación oficial de documentos.
-            </p>
-          </footer>
         </main>
       </div>
       {cancelDialog && (
@@ -1169,7 +721,7 @@ export default function App() {
             aria-labelledby="cancel-title"
             className="modal"
           >
-            <h2 id="cancel-title">¿Cancelar este borrador?</h2>
+            <h2 id="cancel-title">¿Descartar esta solicitud sin enviar?</h2>
             <p>
               Se eliminarán sus archivos temporales. Los documentos que ya
               estaban en tu Baúl se conservarán.
@@ -1191,7 +743,7 @@ export default function App() {
                       method: "DELETE",
                     });
                     setCancelDialog(false);
-                    navigate("applications");
+                    navigate(cancelDestination, true);
                     await refresh();
                   })
                 }

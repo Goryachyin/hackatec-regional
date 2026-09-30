@@ -50,6 +50,14 @@ class IDPIntegrationTests(TestCase):
         self.assertEqual(doc.analysis_status, 'accepted')
         self.assertIsNotNone(doc.analyzed_at)
 
+    def test_history_contains_only_submitted_applications(self):
+        from django.utils import timezone
+        Application.objects.create(owner=self.user, procedure='predial')
+        sent = Application.objects.create(owner=self.user, procedure='predial', status='submitted',
+                                          submitted_at=timezone.now(), folio='TEST-SENT')
+        response = self.client.get('/api/applications/')
+        self.assertEqual([row['id'] for row in response.json()['applications']], [str(sent.id)])
+
     def test_update_preserves_submitted_version(self):
         doc = self.create_document()
         app = Application.objects.create(owner=self.user, procedure='predial', status='submitted')
