@@ -1,0 +1,126 @@
+[
+  {
+    "type": "p",
+    "text": "Versión 0.1 · Actualización: 30 de septiembre de 2026"
+  },
+  {
+    "type": "notice",
+    "text": "Borrador para la demostración. Este prototipo no es un portal oficial del Ayuntamiento ni acredita una relación institucional. Antes de utilizarlo con datos reales deben completarse los datos del responsable, el canal de atención, los plazos de conservación y la revisión jurídica. Utiliza archivos y datos ficticios en la demostración."
+  },
+  {
+    "type": "h2",
+    "text": "1. Identificación y contacto"
+  },
+  {
+    "type": "p",
+    "text": "Equipo desarrollador: EVA06. La razón social o identidad legal del responsable del tratamiento, su domicilio y el correo para solicitudes de privacidad están pendientes de definición. Esta identificación del equipo no sustituye esos datos. No existe todavía un canal formal habilitado para ejercer derechos sobre los datos."
+  },
+  {
+    "type": "h2",
+    "text": "2. Información que procesa el portal"
+  },
+  {
+    "type": "li",
+    "text": "Registro y acceso: CURP, correo electrónico, contraseña protegida mediante hash y códigos de verificación también protegidos mediante hash."
+  },
+  {
+    "type": "li",
+    "text": "Documentos y expedientes: archivos PDF o imágenes, nombre y tamaño del archivo, tipo documental, datos extraídos, resultados de revisión, folios, referencias del trámite, fechas, estados y observaciones. Los archivos pueden contener nombres, domicilio, fotografía, firma y datos patrimoniales, según su contenido."
+  },
+  {
+    "type": "li",
+    "text": "Asistente Alebrije Guía: preguntas, historial temporal y resúmenes de documentos y solicitudes de la cuenta. Las observaciones o los mensajes pueden incluir datos personales si se escriben en ellos."
+  },
+  {
+    "type": "li",
+    "text": "Voz: audio que decidas grabar y su transcripción. El permiso del micrófono lo solicita el navegador; el texto se puede revisar antes de enviarlo al chat."
+  },
+  {
+    "type": "li",
+    "text": "Operación técnica: cookies de sesión y protección contra solicitudes no autorizadas, registros de peticiones y errores, e identificadores derivados de la dirección IP para controles de frecuencia."
+  },
+  {
+    "type": "h2",
+    "text": "3. Para qué se utiliza"
+  },
+  {
+    "type": "p",
+    "text": "La información permite crear y verificar la cuenta, autenticar el acceso, organizar el Baúl, realizar la revisión preliminar documental, preparar y registrar solicitudes, generar folios, consultar estados y explicar el uso del portal. Los registros técnicos apoyan el funcionamiento y la investigación de fallos. La aplicación no incorpora funciones de publicidad ni comercialización de los documentos."
+  },
+  {
+    "type": "p",
+    "text": "El chat y la voz son funciones opcionales: puedes utilizar los controles normales del portal sin usarlos. El pago de predial mostrado es ilustrativo: no captura datos bancarios ni realiza cobros."
+  },
+  {
+    "type": "h2",
+    "text": "4. Inteligencia artificial y servicios externos"
+  },
+  {
+    "type": "p",
+    "text": "Cuando está habilitado el proveedor OpenAI, el bot transmite el archivo documental para clasificarlo y extraer información. Alebrije Guía transmite las preguntas, parte del historial y resúmenes autorizados de la cuenta; no adjunta los archivos del Baúl a sus consultas. La grabadora transmite el audio a OpenAI para transcribirlo. No incluyas contraseñas ni información innecesaria en el chat."
+  },
+  {
+    "type": "p",
+    "text": "Las peticiones de análisis y chat se configuran sin guardar la respuesta mediante la opción de almacenamiento de la API; esto no garantiza la eliminación inmediata ni retención cero en los sistemas del proveedor. El tratamiento del proveedor y las ubicaciones de procesamiento deben revisarse conforme a la configuración y los acuerdos contratados."
+  },
+  {
+    "type": "p",
+    "text": "El despliegue utiliza Vercel para el frontend, Render para servicios y Supabase para almacenamiento o base de datos según la configuración. El correo de verificación utiliza el proveedor de correo configurado. Estos servicios pueden intervenir en el alojamiento, transporte o procesamiento de información fuera de tu equipo y, según su infraestructura, fuera de México. No se ha documentado todavía una garantía de residencia exclusiva en México."
+  },
+  {
+    "type": "h2",
+    "text": "5. Intercambio de expedientes de demostración"
+  },
+  {
+    "type": "p",
+    "text": "Al confirmar y ejecutar “Enviar a dependencias”, se envían copias de los documentos y datos del expediente al portal auxiliar de revisores, donde se generan resoluciones simuladas. Esa copia tiene un almacenamiento distinto: eliminar el archivo del Baúl no elimina automáticamente la copia externa. Marcar un documento como simulado no anonimiza su contenido. No envíes documentos reales para este ensayo."
+  },
+  {
+    "type": "h2",
+    "text": "6. Conservación y eliminación"
+  },
+  {
+    "type": "p",
+    "text": "El prototipo aún no tiene un calendario definitivo de conservación ni eliminación automática de cuentas y expedientes. Los documentos pueden permanecer almacenados hasta su eliminación por los mecanismos disponibles. Si un documento está vinculado a una solicitud enviada, retirarlo o actualizarlo en el Baúl conserva la versión del expediente."
+  },
+  {
+    "type": "p",
+    "text": "El historial del chat se mantiene en memoria del navegador y no se guarda en la base de datos del portal; se descarta al limpiar la conversación, recargar o cerrar sesión. El audio se trata como una carga temporal y no se incorpora al Baúl. Los registros y posibles copias de respaldo de proveedores tienen condiciones que deben confirmarse por separado. No se garantiza eliminación inmediata de todas las copias."
+  },
+  {
+    "type": "h2",
+    "text": "7. Acceso, rectificación, cancelación y oposición"
+  },
+  {
+    "type": "p",
+    "text": "El aviso definitivo deberá establecer el procedimiento para ejercer derechos ARCO, revocar el consentimiento y limitar el uso o divulgación de datos. Debe indicar el contacto, los requisitos de identificación, el alcance de la solicitud y la forma de respuesta. Ese procedimiento está pendiente de habilitarse para EVA06; el botón de eliminar documentos no lo sustituye. No envíes identificaciones a un contacto no confirmado."
+  },
+  {
+    "type": "h2",
+    "text": "8. Cookies y controles disponibles"
+  },
+  {
+    "type": "p",
+    "text": "El portal utiliza cookies técnicas para mantener la sesión y proteger las operaciones. Puedes eliminarlas desde tu navegador; esto puede cerrar la sesión o impedir operaciones autenticadas. También puedes revocar el permiso de micrófono desde la configuración del navegador. No se implementó un módulo de cookies publicitarias en el código del portal."
+  },
+  {
+    "type": "h2",
+    "text": "9. Protección y alcance de la revisión"
+  },
+  {
+    "type": "p",
+    "text": "El sistema aplica controles de acceso por cuenta, descargas autenticadas y configuración de HTTPS en producción. Ninguna medida garantiza seguridad absoluta. El análisis automatizado puede equivocarse y no acredita autenticidad documental ni aprobación oficial. No se efectúa reconocimiento facial ni autenticación mediante la voz como parte de estas funciones."
+  },
+  {
+    "type": "h2",
+    "text": "10. Cambios y alcance de este borrador"
+  },
+  {
+    "type": "p",
+    "text": "Las nuevas versiones se publicarán en esta misma dirección con su fecha de actualización. Mostrar este aviso no constituye por sí mismo consentimiento registrado, certificación de cumplimiento ni habilitación para tratar cualquier tipo de dato. Antes de operar con una entidad pública se deberán definir las responsabilidades y el marco jurídico aplicable al servicio."
+  },
+  {
+    "type": "p",
+    "text": "Referencia para revisión del aviso: Ley Federal de Protección de Datos Personales en Posesión de los Particulares. El alcance jurídico definitivo depende de quién sea el responsable y de su relación con la entidad pública."
+  }
+]

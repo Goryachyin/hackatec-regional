@@ -1,3 +1,4 @@
+import PrivacyLink from './PrivacyLink';
 import { useRef } from "react";
 import { LoaderCircle, Plus, Search, UploadCloud } from "lucide-react";
 function Spinner() { return <LoaderCircle className="animate-spin" size={18}/>; }
@@ -38,6 +39,7 @@ export function UploadBox({ kind, title, onUpload, busy }) {
   return (
     <div className="upload-box">
       <UploadCloud size={26} />
+      <PrivacyLink/>
       <strong>{title || "Selecciona tu documento"}</strong>
       <span>PDF, JPG o PNG · Máximo 10 MB · PDF hasta 10 páginas</span>
       <input

@@ -1,3 +1,4 @@
+import PrivacyLink from './components/PrivacyLink';
 import AlebrijeChat from './components/AlebrijeChat';
 import DependenciesPanel, { dependencyStatus } from './components/DependenciesPanel';
 import RequirementChecklist from "./components/RequirementChecklist";
@@ -246,6 +247,7 @@ function Auth({ onSuccess }) {
               </>
             )}
           </div>
+          <p className="muted text-sm mt-4">Antes de registrar tus datos, consulta el <PrivacyLink/>.</p>
           <div className="disclaimer">
             <LockKeyhole size={16} />
             <span>
@@ -498,6 +500,7 @@ export default function App() {
             </button>
           ))}
         </nav>
+        <div className="px-5 py-3"><PrivacyLink/></div>
         <div className="sidebar-note">
         </div>
         <div className="sidebar-bottom">

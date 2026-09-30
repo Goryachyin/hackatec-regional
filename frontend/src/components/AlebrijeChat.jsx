@@ -1,3 +1,4 @@
+import PrivacyLink from './PrivacyLink';
 import { useEffect, useRef, useState } from 'react';
 import { Mic, Square, Send, X, Trash2 } from 'lucide-react';
 import { api } from '../api';
@@ -85,6 +86,7 @@ export default function AlebrijeChat({ application, navigate, blocked }) {
         {busy && <p role="status">Procesando…</p>}<div ref={end}/>
       </div>
       <form onSubmit={send} className="alebrije-compose">
+        <PrivacyLink/>
         <small>Las consultas, resúmenes necesarios y el audio que grabes se procesan con OpenAI. No envíes contraseñas. El chat no se guarda en tu cuenta.</small>
         {error && <p role="alert" className="alebrije-error">{error}</p>}
         <label htmlFor="alebrije-question">{recording ? 'Grabando · máximo 60 segundos' : 'Escribe o revisa tu transcripción'}</label>
