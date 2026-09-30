@@ -53,3 +53,23 @@ escaneados. Volver a analizar los documentos guardados desde la interfaz.
 
 Fuentes: https://developers.openai.com/api/docs/guides/file-inputs
 y https://developers.openai.com/api/docs/guides/structured-outputs
+
+
+## Tipos adicionales (revisión preliminar)
+
+OpenAI reconoce también pc_pago, pc_uso_suelo, op_solicitud, op_predial,
+eco_recoleccion, eco_solicitud, propiedad y clave_catastral. El motor OCR local
+continúa limitado a INE, CFE y CURP y rechaza otros tipos explícitamente.
+
+Los campos mínimos son reglas del prototipo, no requisitos legales verificados.
+Una constancia de uso de suelo sin vencimiento explícito requiere revisión;
+no se inventa su vigencia. Una factura no acredita ser la última disponible ni
+un recibo confirma el movimiento bancario. Los formatos reales deben evaluarse
+con muestras autorizadas antes de afirmar precisión.
+
+Django envía ahora todos estos tipos al bot. Archivos guardados previamente como
+received deben volver a analizarse; no se convierten a accepted automáticamente.
+La pantalla de Predial mantiene Continuar sin acción; clave_catastral está
+soportada por el bot y el Baúl, sin activar el envío del formulario de Predial.
+
+Tras actualizar: reconstruir el contenedor, reiniciar Django y recargar el portal.

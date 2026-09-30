@@ -5,6 +5,7 @@ import uuid
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from django.conf import settings
+from .catalog import IDP_TYPES, IDP_REQUIRED
 
 
 class IDPError(Exception):
@@ -14,7 +15,7 @@ class IDPError(Exception):
 
 
 def inspect_document(file, filename, kind):
-    if kind not in ('ine', 'cfe', 'curp'):
+    if kind not in IDP_TYPES:
         raise IDPError('Este tipo documental no está soportado por el bot.', 422)
     if not settings.IDP_API_KEY:
         raise IDPError('Falta configurar el acceso al servicio IDP.')
@@ -62,7 +63,7 @@ def inspect_document(file, filename, kind):
         raise IDPError('El bot devolvió una respuesta no válida.', 502) from exc
     if (not isinstance(result, dict) or result.get('schema_version') != 1
             or result.get('expected_type') != kind
-            or result.get('document_type') not in ('ine', 'cfe', 'curp', 'unknown')
+            or result.get('document_type') not in IDP_TYPES | {'unknown'}
             or result.get('status') not in ('accepted', 'rejected', 'needs_review')
             or not isinstance(result.get('extracted_data'), dict)
             or not isinstance(result.get('message'), str)
@@ -70,9 +71,9 @@ def inspect_document(file, filename, kind):
             or result.get('official_validation') is not False):
         raise IDPError('El resultado del bot no cumple el contrato esperado.', 502)
     if result['status'] == 'accepted':
-        required = {'ine': ['nombre', 'curp', 'vigencia'], 'cfe': ['direccion'], 'curp': ['curp', 'nombre']}[kind]
+        required = IDP_REQUIRED[kind]
         fields = result['extracted_data']
-        if (result['document_type'] != kind or not all(isinstance(fields.get(k), str) and fields[k].strip() for k in required)
+        if ((result['document_type'] != kind and kind != 'clave_catastral') or not all(isinstance(fields.get(k), str) and fields[k].strip() for k in required)
                 or not result['checks'] or not all(isinstance(c, dict) and c.get('passed') is True for c in result['checks'])):
             raise IDPError('El bot no aportó evidencia suficiente para aceptar el archivo.', 502)
     return result

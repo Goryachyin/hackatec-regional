@@ -21,7 +21,7 @@ from django.http import FileResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.utils import timezone
 
-from .catalog import CATALOG, CATALOG_BY_ID, DOCUMENT_TYPES
+from .catalog import CATALOG, CATALOG_BY_ID, DOCUMENT_TYPES, IDP_TYPES
 from .models import Application, Attachment, AuthAttempt, Document, User, Verification
 from .idp import IDPError, inspect_document
 
@@ -214,6 +214,10 @@ def inspect_file(upload):
     return mime
 
 
+def analyze_upload(upload, kind):
+    return inspect_document(upload, upload.name, kind)
+
+
 @endpoint(['GET', 'POST'])
 def documents(request):
     if request.method == 'GET':
@@ -232,7 +236,7 @@ def documents(request):
         if kind not in CATALOG_BY_ID[candidate.procedure]['requirements']:
             raise ApiError('Este documento no corresponde al trámite.')
     # El OCR ocurre antes de abrir la transacción: no mantener bloqueos durante inferencia.
-    analysis = inspect_document(upload, upload.name, kind)
+    analysis = analyze_upload(upload, kind)
     if analysis['status'] != 'accepted':
         # Diagnóstico sin nombres, identificadores ni texto del documento.
         logging.getLogger('django.request').warning(
@@ -252,7 +256,7 @@ def documents(request):
                     raise ApiError('Este documento no corresponde a los requisitos del borrador.')
             if Document.objects.filter(owner=request.user).count() >= 100:
                 raise ApiError('Alcanzaste el límite de 100 documentos del prototipo.', 409)
-            doc = Document(owner=request.user, kind=kind, original_name=Path(upload.name).name[:255], size=upload.size, content_type=mime, in_vault=not bool(app), temporary_for=app, analysis_status='accepted', analysis_result=analysis, analyzed_at=timezone.now())
+            doc = Document(owner=request.user, kind=kind, original_name=Path(upload.name).name[:255], size=upload.size, content_type=mime, in_vault=not bool(app), temporary_for=app, analysis_status=analysis['status'], analysis_result=analysis, analyzed_at=timezone.now())
             doc.file.save(upload.name, upload, save=False)
             doc.save()
             if app:
@@ -276,7 +280,7 @@ def manage_document(request, doc_id):
         mime = inspect_file(upload)
         if original.kind not in DOCUMENT_TYPES:
             raise ApiError('Este tipo documental ya no admite actualizaciones.', 409)
-        analysis = inspect_document(upload, upload.name, original.kind)
+        analysis = analyze_upload(upload, original.kind)
         if analysis['status'] != 'accepted':
             return JsonResponse({'message': analysis['message'], 'analysis': analysis}, status=422)
     replacement = None
@@ -289,7 +293,7 @@ def manage_document(request, doc_id):
             if analysis is not None:
                 replacement = Document(owner=request.user, kind=original.kind,
                     original_name=Path(upload.name).name[:255], size=upload.size,
-                    content_type=mime, in_vault=True, analysis_status='accepted',
+                    content_type=mime, in_vault=True, analysis_status=analysis['status'],
                     analysis_result=analysis, analyzed_at=timezone.now())
                 replacement.file.save(upload.name, upload, save=False)
                 replacement.save()
@@ -315,6 +319,8 @@ def reanalyze(request, doc_id):
     doc = Document.objects.filter(id=doc_id, owner=request.user).first()
     if not doc:
         raise ApiError('Documento no encontrado.', 404)
+    if doc.kind not in IDP_TYPES:
+        raise ApiError('Este documento requiere revisión del área correspondiente.', 409)
     with doc.file.open('rb') as source:
         result = inspect_document(source, doc.original_name, doc.kind)
     doc.analysis_status = result['status']
@@ -396,7 +402,8 @@ def submit(request, app_id):
         kinds = set(app.attachments.values_list('document__kind', flat=True))
         if not set(rules['requirements']).issubset(kinds):
             raise ApiError('Completa todos los documentos antes de enviar la solicitud.')
-        if app.attachments.exclude(document__analysis_status='accepted').exists():
+        if any(a.document.analysis_status != 'accepted'
+               for a in app.attachments.select_related('document')):
             raise ApiError('Analiza o reemplaza los documentos pendientes antes de enviar la solicitud.')
         if rules['reference_required'] and not app.reference:
             raise ApiError('Ingresa la cuenta o clave predial.')

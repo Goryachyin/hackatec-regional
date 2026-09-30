@@ -1,3 +1,7 @@
+import RequirementChecklist from "./components/RequirementChecklist";
+import PagoPredial from "./pages/PagoPredial";
+import Programas from "./pages/Programas";
+import { Megaphone } from "lucide-react";
 import Inicio from "./pages/Inicio";
 import Tramites from "./pages/Tramites";
 import MiBaul from "./pages/MiBaul";
@@ -323,6 +327,10 @@ export default function App() {
     setShowUpload(false);
   }
   async function start(procedure) {
+    if (procedure === 'predial') {
+      navigate('predial');
+      return;
+    }
     await action(async () => {
       const result = await api("applications/", {
         method: "POST",
@@ -444,6 +452,7 @@ export default function App() {
           {[
             ["home", Home, "Inicio"],
             ["catalog", LayoutGrid, "Trámites"],
+            ["programs", Megaphone, "Programas"],
             ["vault", FolderLock, "Mis Documentos"],
             ["applications", ClipboardList, "Mis solicitudes"],
           ].map(([id, Icon, label]) => (
@@ -504,7 +513,7 @@ export default function App() {
                 ? "Mi Baúl"
                 : page === "applications" || page === "request"
                   ? "Mis solicitudes"
-                  : page === "home" ? "Inicio" : "Trámites"}
+                  : page === "home" ? "Inicio" : page === "programs" ? "Programas" : "Trámites"}
             </strong>
           </span>
           <span className="prototype">ENTORNO DE PRUEBAS</span>
@@ -529,6 +538,8 @@ export default function App() {
               <Spinner /> Cargando tu información…
             </div>
           )}
+          {page === "predial" && <PagoPredial email={user.email} navigate={navigate} />}
+          {page === "programs" && <Programas />}
           {page === "home" && <Inicio docs={docs} pending={pending} catalog={catalog} apps={apps} navigate={navigate} open={open} busy={busy} />}
           {page === "catalog" && <Tramites catalog={catalog} query={query} setQuery={setQuery} busy={busy} loading={loading} start={start} navigate={navigate} />}
           {page === "vault" && <MiBaul docs={docs} types={types} showUpload={showUpload} setShowUpload={setShowUpload} uploadKind={uploadKind} setUploadKind={setUploadKind} upload={upload} busy={busy} reanalyzeDocument={reanalyzeDocument} updateDocument={updateDocument} deleteDocument={deleteDocument} />}
@@ -556,6 +567,7 @@ export default function App() {
                 </span>
               </div>
               {active.status !== "draft" ? (
+                <>
                 <section className="panel confirmation">
                   <span className="confirmation-icon">
                     <CheckCircle2 size={40} />
@@ -588,6 +600,8 @@ export default function App() {
                     </button>
                   </div>
                 </section>
+                <RequirementChecklist procedure={procedure} application={active} docs={docs} types={types} busy={busy} readOnly/>
+                </>
               ) : (
                 <form onSubmit={submit}>
                   <div className="steps">
@@ -612,85 +626,11 @@ export default function App() {
                       />
                     </label>
                   </section>
-                  <section className="panel">
-                    <h3>Documentos para tu solicitud</h3>
-                    <p className="muted text-sm mt-2 mb-5">
-                      Los documentos disponibles se toman de tu Baúl. Los nuevos
-                      se guardarán allí únicamente al enviar la solicitud.
-                    </p>
-                    {procedure.requirements.map((kind) => {
-                      const doc = active.documents.find((d) => d.kind === kind);
-                      const options = docs.filter((d) => d.kind === kind);
-                      return (
-                        <div className="requirement-row" key={kind}>
-                          <div className="flex gap-3 items-start">
-                            <span
-                              className={`requirement-check ${doc?.analysis_status === 'accepted' ? "done" : ""}`}
-                            >
-                              {doc ? (
-                                <Check size={18} />
-                              ) : (
-                                <FileText size={18} />
-                              )}
-                            </span>
-                            <div className="grow min-w-0">
-                              <h4>{types[kind]}</h4>
-                              {doc ? (
-                                <>
-                                  <p className="truncate">{doc.name}</p>
-                                  <small>
-                                    {doc.in_vault
-                                      ? "Reutilizado de tu Baúl"
-                                      : "Temporal · se guardará al enviar"}
-                                  </small>
-                                  <AnalysisResult doc={doc} busy={busy} onAnalyze={reanalyzeDocument}/>
-                                </>
-                              ) : (
-                                <p className="muted text-sm">
-                                  Necesitas agregar este documento.
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          {options.length > 0 && (
-                            <label className="mt-4 text-sm">
-                              Elegir del Baúl
-                              <select
-                                value={doc?.in_vault ? doc.id : ""}
-                                disabled={busy}
-                                onChange={(e) =>
-                                  e.target.value &&
-                                  action(async () => {
-                                    const result = await api(
-                                      `applications/${active.id}/`,
-                                      {
-                                        method: "PATCH",
-                                        data: {
-                                          reference,
-                                          document_id: e.target.value,
-                                        },
-                                      },
-                                    );
-                                    setActive(result.application);
-                                  })
-                                }
-                              >
-                                <option value="">
-                                  Selecciona un documento guardado
-                                </option>
-                                {options.map((d) => (
-                                  <option value={d.id} key={d.id}>
-                                    {d.name} · {date(d.created_at)}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                          )}
-                          
-                        </div>
-                      );
-                    })}
-                  </section>
+                  <RequirementChecklist procedure={procedure} application={active} docs={docs} types={types} busy={busy} upload={upload} reanalyze={reanalyzeDocument}
+                    selectDocument={document_id => action(async () => {
+                      const result = await api(`applications/${active.id}/`, { method: 'PATCH', data: { reference, document_id } });
+                      setActive(result.application);
+                    })}/>
                   <div className="request-actions">
                     <button
                       type="button"

@@ -20,9 +20,10 @@ def sample_upload():
 
 
 def accepted(kind='ine'):
+    from .catalog import IDP_REQUIRED
     return {'schema_version': 1, 'expected_type': kind, 'document_type': kind, 'status': 'accepted',
             'code': 'precheck_passed', 'message': 'Revisión preliminar completa.', 'official_validation': False,
-            'extracted_data': {'nombre': 'PERSONA FICTICIA', 'curp': 'PEPF900101HGRRRC09', 'vigencia': '2034'} if kind == 'ine' else {'direccion': 'CALLE FICTICIA 123'},
+            'extracted_data': {'nombre': 'PERSONA FICTICIA', 'curp': 'PEPF900101HGRRRC09', 'vigencia': '2034'} if kind == 'ine' else {key: 'DATO FICTICIO' for key in IDP_REQUIRED[kind]},
             'checks': [{'field': 'type', 'passed': True}]}
 
 
@@ -57,6 +58,27 @@ class IDPIntegrationTests(TestCase):
                                           submitted_at=timezone.now(), folio='TEST-SENT')
         response = self.client.get('/api/applications/')
         self.assertEqual([row['id'] for row in response.json()['applications']], [str(sent.id)])
+
+    def test_license_requires_general_and_department_documents(self):
+        from .catalog import CATALOG_BY_ID, IDP_TYPES
+        rule = CATALOG_BY_ID['funcionamiento']
+        self.assertEqual([len(group['requirements']) for group in rule['requirement_groups']], [3, 2, 2, 2])
+        self.assertEqual(rule['requirement_groups'][0]['requirements'], ['ine', 'curp', 'cfe'])
+        app = Application.objects.create(owner=self.user, procedure='funcionamiento')
+        with patch('portal.views.inspect_document') as bot:
+            bot.side_effect = lambda upload, filename, kind: accepted(kind)
+            for index, kind in enumerate(rule['requirements']):
+                response = self.client.post('/api/documents/', {'kind': kind, 'file': sample_upload(), 'application_id': str(app.id)})
+                self.assertEqual(response.status_code, 201, response.content)
+                self.assertEqual(response.json()['document']['analysis_status'], 'accepted' if kind in IDP_TYPES else 'received')
+                self.assertFalse(response.json()['document']['analysis']['official_validation'])
+                if index < 8:
+                    self.assertEqual(self.client.post(f'/api/applications/{app.id}/submit/').status_code, 400)
+            self.assertEqual([call.args[2] for call in bot.call_args_list], rule['requirements'])
+        self.assertEqual(Document.objects.filter(in_vault=True).count(), 0)
+        response = self.client.post(f'/api/applications/{app.id}/submit/')
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(Document.objects.filter(in_vault=True).count(), 9)
 
     def test_update_preserves_submitted_version(self):
         doc = self.create_document()

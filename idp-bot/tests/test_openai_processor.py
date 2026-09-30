@@ -52,6 +52,22 @@ class OpenAITests(unittest.TestCase):
         self.assertEqual(content['detail'], 'high')
         self.assertEqual(pages, 1)
 
+    def test_new_types_require_visible_fields(self):
+        extra = dict(titulo_documento='DOCUMENTO DE PRUEBA', emisor='EMISOR FICTICIO',
+                     titular='PERSONA FICTICIA', concepto='CONCEPTO DE PRUEBA', folio='001',
+                     fecha_emision='2020-01-01', vigencia_hasta='2099-01-01',
+                     clave_catastral='00001234', residuos='Papel y cartón')
+        for kind in ['propiedad', 'pc_pago', 'pc_uso_suelo', 'op_solicitud', 'op_predial', 'eco_recoleccion', 'eco_solicitud', 'clave_catastral']:
+            with self.subTest(kind=kind):
+                result = evaluate_extraction(extraction(kind, **extra), kind, 1)
+                self.assertEqual(result['status'], 'accepted')
+                self.assertFalse(result['official_validation'])
+                self.assertEqual(evaluate_extraction(extraction(kind), kind, 1)['status'], 'needs_review')
+        self.assertEqual(evaluate_extraction(extraction('op_predial', **extra), 'pc_pago', 1)['status'], 'rejected')
+        self.assertEqual(evaluate_extraction(extraction('op_predial', **extra), 'clave_catastral', 1)['status'], 'accepted')
+        extra['vigencia_hasta'] = '2000-01-01'
+        self.assertEqual(evaluate_extraction(extraction('pc_uso_suelo', **extra), 'pc_uso_suelo', 1)['status'], 'needs_review')
+
     def test_missing_optional_fields_not_invented(self):
         result = evaluate_extraction(extraction(primer_apellido=None, fecha_nacimiento=None), 'curp', 1)
         self.assertIsNone(result['extracted_data']['primer_apellido'])

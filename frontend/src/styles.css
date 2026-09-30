@@ -1543,6 +1543,19 @@ nav button:hover {
     }
 }
 .home-columns { display: grid; grid-template-columns: 1.15fr 1fr; gap: 24px; margin-top: 28px; }
+.program-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.program-card { overflow: hidden; padding: 0; }
+.program-poster { display: block; width: 100%; background: #eee9e4; padding: 20px; cursor: zoom-in; }
+.program-poster img { width: 100%; height: 360px; object-fit: contain; }
+.program-copy { padding: 24px; display: grid; gap: 16px; }
+.program-copy .primary { justify-self: start; }
+.program-dialog { width: min(1000px, 94vw); max-height: 92dvh; padding: 0; border: 0; border-radius: 16px; margin: auto; background: #fff; color: #233b37; }
+.program-dialog::backdrop { background: rgb(15 30 25 / 75%); }
+.program-dialog-header { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; background: white; border-bottom: 1px solid #ddd; }
+.program-dialog-header h2 { font-size: 18px; }
+.program-dialog-body { padding: 12px; }
+.program-dialog-body img { display: block; width: 100%; height: auto; }
+@media (max-width: 760px) { .program-grid { grid-template-columns: 1fr; } .program-poster img { height: 300px; } }
 .home-columns > * { min-width: 0; }
 .home-empty { display: grid; justify-items: start; gap: 16px; padding: 24px 0; }
 .home-guide ol { list-style: none; padding: 0; display: grid; gap: 24px; margin: 28px 0; }

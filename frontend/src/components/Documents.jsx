@@ -5,14 +5,14 @@ export function AnalysisResult({ doc, busy, onAnalyze }) {
   const result = doc.analysis || {};
   return <div className="mt-4 text-sm" aria-live="polite">
     <span className={`badge ${doc.analysis_status === 'accepted' ? '' : 'draft'}`}>
-      {doc.analysis_status === 'accepted' ? 'Campos mínimos comprobados' : doc.analysis_status === 'not_analyzed' ? 'Pendiente de análisis' : 'Requiere corrección'}
+      {doc.analysis_status === 'accepted' ? 'Campos mínimos comprobados' : doc.analysis_status === 'received' ? 'Entregado · pendiente de revisión' : doc.analysis_status === 'not_analyzed' ? 'Pendiente de análisis' : 'Requiere corrección'}
     </span>
     {result.message && <p className="muted mt-3">{result.message}</p>}
     {result.extracted_data && <details className="mt-3">
       <summary className="cursor-pointer text-[#315e4f]">Ver datos extraídos</summary>
       <dl className="mt-2 space-y-2 break-words">{Object.entries(result.extracted_data).filter(([key]) => key !== 'nombre' || !('nombre_completo' in result.extracted_data)).map(([key, value]) => <div key={key}><dt className="text-xs muted">{key.replaceAll('_', ' ')}</dt><dd>{value || 'No identificado'}</dd></div>)}</dl>
     </details>}
-    {onAnalyze && <button type="button" className="text-button mt-3" disabled={busy} onClick={() => onAnalyze(doc)}>{busy ? <Spinner/> : <Search size={15}/>} {doc.analysis_status === 'not_analyzed' ? 'Analizar documento' : 'Volver a analizar'}</button>}
+    {onAnalyze && <button type="button" className="text-button mt-3" disabled={busy} onClick={() => onAnalyze(doc)}>{busy ? <Spinner/> : <Search size={15}/>} {doc.analysis_status === 'received' ? 'Entregado · pendiente de revisión' : doc.analysis_status === 'not_analyzed' ? 'Analizar documento' : 'Volver a analizar'}</button>}
   </div>;
 }
 

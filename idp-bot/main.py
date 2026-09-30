@@ -49,7 +49,7 @@ def health():
                          'schema_version': 1}, status_code=200 if ready else 503)
 
 @app.post('/process-document/')
-def process_document(doc_type: Literal['ine', 'cfe', 'curp'] = Form(...), file: UploadFile = File(...)):
+def process_document(doc_type: Literal['ine', 'cfe', 'curp', 'propiedad', 'pc_pago', 'pc_uso_suelo', 'op_solicitud', 'op_predial', 'eco_recoleccion', 'eco_solicitud', 'clave_catastral'] = Form(...), file: UploadFile = File(...)):
     # Un trabajo por proceso. La ruta síncrona utiliza el threadpool de FastAPI.
     if not gate.acquire(blocking=False):
         return JSONResponse({'code': 'busy', 'message': 'El bot está ocupado. Intenta nuevamente en unos segundos.'}, status_code=503, headers={'Retry-After': '3'})
@@ -57,6 +57,8 @@ def process_document(doc_type: Literal['ine', 'cfe', 'curp'] = Form(...), file: 
         if os.getenv('IDP_PROVIDER', 'local') == 'openai':
             from openai_processor import analyze as analyze_openai
             return analyze_openai(file.file.read(MAX_BYTES + 1), file.filename or '', doc_type)
+        if doc_type not in ('ine', 'cfe', 'curp'):
+            raise DocumentError('Este tipo requiere configurar el proveedor OpenAI.', 'unsupported_provider', 503)
         return analyze(file.file.read(MAX_BYTES + 1), file.filename or '', doc_type)
     except DocumentError as exc:
         return JSONResponse({'code': exc.code, 'message': str(exc)}, status_code=exc.status)
