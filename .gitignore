@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+*.sqlite3
+backend/private_media/
+.env
+.DS_Store
+work/

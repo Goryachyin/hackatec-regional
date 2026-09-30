@@ -1,0 +1,28 @@
+services:
+  idp-bot:
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      IDP_API_KEY: ${IDP_API_KEY:-local-development-key}
+      IDP_PROVIDER: ${IDP_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1}
+    mem_limit: 3g
+    cpus: 4
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/',timeout=5)"]
+      interval: 20s
+      timeout: 8s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
