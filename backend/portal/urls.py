@@ -17,4 +17,5 @@ urlpatterns = [
     path('applications/', views.applications),
     path('applications/<uuid:app_id>/', views.application_detail),
     path('applications/<uuid:app_id>/submit/', views.submit),
+    path('applications/<uuid:app_id>/dependencies/', views.dependencies_exchange),
 ]

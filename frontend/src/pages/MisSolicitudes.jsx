@@ -1,3 +1,4 @@
+import { dependencyStatus } from '../components/DependenciesPanel';
 import {
   ArrowRight,
   ChevronRight,
@@ -39,7 +40,7 @@ export default function MisSolicitudes({ apps, busy, navigate, open }) {
               <span
                 className="badge"
               >
-                Recibida
+                {dependencyStatus[app.status] || 'Recibida'}{app.is_demo && !['approved', 'rejected'].includes(app.status) ? ' · Demostración' : ''}
               </span>
               <ChevronRight size={18} />
             </button>

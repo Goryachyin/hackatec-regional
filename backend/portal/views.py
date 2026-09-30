@@ -9,6 +9,7 @@ from pathlib import Path
 
 from PIL import Image
 from pypdf import PdfReader
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
@@ -24,6 +25,7 @@ from django.utils import timezone
 from .catalog import CATALOG, CATALOG_BY_ID, DOCUMENT_TYPES, IDP_TYPES
 from .models import Application, Attachment, AuthAttempt, Document, User, Verification
 from .idp import IDPError, inspect_document
+from .dependencies import ExchangeError, delivery_data, exchange_step
 
 
 class ApiError(Exception):
@@ -105,15 +107,34 @@ def issue_code(user):
 
 
 def user_data(user):
-    return {'email': user.email, 'curp': user.curp}
+    return {'email': user.email, 'curp': user.curp, 'document_simulation_enabled': simulation_enabled(user)}
 
 
 def document_data(doc):
-    return {'id': str(doc.id), 'kind': doc.kind, 'name': doc.original_name, 'size': doc.size, 'in_vault': doc.in_vault, 'created_at': doc.created_at.isoformat(), 'url': f'/api/documents/{doc.id}/download/', 'analysis_status': doc.analysis_status, 'analysis': doc.analysis_result, 'analyzed_at': doc.analyzed_at.isoformat() if doc.analyzed_at else None}
+    return {'can_use_for_application': document_usable(doc, doc.owner), 'is_simulated': doc.is_simulated, 'id': str(doc.id), 'kind': doc.kind, 'name': doc.original_name, 'size': doc.size, 'in_vault': doc.in_vault, 'created_at': doc.created_at.isoformat(), 'url': f'/api/documents/{doc.id}/download/', 'analysis_status': doc.analysis_status, 'analysis': doc.analysis_result, 'analyzed_at': doc.analyzed_at.isoformat() if doc.analyzed_at else None}
 
 
 def application_data(app):
-    return {'id': str(app.id), 'procedure': app.procedure, 'name': CATALOG_BY_ID[app.procedure]['name'], 'status': app.status, 'reference': app.reference, 'folio': app.folio, 'created_at': app.created_at.isoformat(), 'submitted_at': app.submitted_at.isoformat() if app.submitted_at else None, 'documents': [document_data(a.document) for a in app.attachments.select_related('document').all()]}
+    return {'delivery': delivery_data(app), 'is_demo': app.is_demo or app.attachments.filter(document__is_simulated=True).exists(), 'id': str(app.id), 'procedure': app.procedure, 'name': CATALOG_BY_ID[app.procedure]['name'], 'status': app.status, 'reference': app.reference, 'folio': app.folio, 'created_at': app.created_at.isoformat(), 'submitted_at': app.submitted_at.isoformat() if app.submitted_at else None, 'documents': [document_data(a.document) for a in app.attachments.select_related('document').all()]}
+
+
+@endpoint(['POST'])
+def dependencies_exchange(request, app_id):
+    app = Application.objects.filter(id=app_id, owner=request.user).first()
+    if not app:
+        raise ApiError('Solicitud no encontrada.', 404)
+    data = body(request)
+    if not simulation_enabled(request.user):
+        raise ApiError('Se requiere una cuenta con simulación habilitada.', 403)
+    sync = data.get('action') == 'sync'
+    if not sync and data.get('confirm_demo_files') is not True:
+        raise ApiError('Confirma que los archivos son ficticios antes de transferir sus copias.')
+    try:
+        exchange_step(app, sync=sync)
+    except ExchangeError as exc:
+        raise ApiError(str(exc), 503) from exc
+    app.refresh_from_db()
+    return JsonResponse({'application': application_data(app)})
 
 
 @endpoint(['GET'], private=False)
@@ -225,8 +246,24 @@ def inspect_file(upload):
     return mime
 
 
-def analyze_upload(upload, kind):
-    return inspect_document(upload, upload.name, kind)
+def simulation_enabled(user):
+    return settings.DOCUMENT_SIMULATION_ENABLED and user.can_simulate_documents
+
+
+def document_usable(doc, user):
+    return doc.analysis_status == 'accepted' and (not doc.is_simulated or simulation_enabled(user))
+
+
+def analyze_upload(upload, kind, user, filename=None):
+    if simulation_enabled(user):
+        return {'schema_version': 1, 'expected_type': kind, 'document_type': kind,
+                'status': 'accepted', 'code': 'simulation', 'source': 'simulation',
+                'message': 'Revisión simulada. Tipo seleccionado por el usuario; no se extrajeron ni verificaron datos.',
+                'official_validation': False, 'performed_by': str(user.pk),
+                'performed_at': timezone.now().isoformat(), 'checks': []}
+    result = inspect_document(upload, filename or upload.name, kind)
+    return {**result, 'source': 'bot', 'performed_by': str(user.pk),
+            'performed_at': timezone.now().isoformat()}
 
 
 @endpoint(['GET', 'POST'])
@@ -247,7 +284,7 @@ def documents(request):
         if kind not in CATALOG_BY_ID[candidate.procedure]['requirements']:
             raise ApiError('Este documento no corresponde al trámite.')
     # El OCR ocurre antes de abrir la transacción: no mantener bloqueos durante inferencia.
-    analysis = analyze_upload(upload, kind)
+    analysis = analyze_upload(upload, kind, request.user)
     if analysis['status'] != 'accepted':
         # Diagnóstico sin nombres, identificadores ni texto del documento.
         logging.getLogger('django.request').warning(
@@ -267,7 +304,7 @@ def documents(request):
                     raise ApiError('Este documento no corresponde a los requisitos del borrador.')
             if Document.objects.filter(owner=request.user).count() >= 100:
                 raise ApiError('Alcanzaste el límite de 100 documentos del prototipo.', 409)
-            doc = Document(owner=request.user, kind=kind, original_name=Path(upload.name).name[:255], size=upload.size, content_type=mime, in_vault=not bool(app), temporary_for=app, analysis_status=analysis['status'], analysis_result=analysis, analyzed_at=timezone.now())
+            doc = Document(owner=request.user, kind=kind, original_name=Path(upload.name).name[:255], size=upload.size, content_type=mime, in_vault=not bool(app), temporary_for=app, is_simulated=analysis.get('source') == 'simulation', analysis_status=analysis['status'], analysis_result=analysis, analyzed_at=timezone.now())
             doc.file.save(upload.name, upload, save=False)
             doc.save()
             if app:
@@ -291,7 +328,7 @@ def manage_document(request, doc_id):
         mime = inspect_file(upload)
         if original.kind not in DOCUMENT_TYPES:
             raise ApiError('Este tipo documental ya no admite actualizaciones.', 409)
-        analysis = analyze_upload(upload, original.kind)
+        analysis = analyze_upload(upload, original.kind, request.user)
         if analysis['status'] != 'accepted':
             return JsonResponse({'message': analysis['message'], 'analysis': analysis}, status=422)
     replacement = None
@@ -304,7 +341,7 @@ def manage_document(request, doc_id):
             if analysis is not None:
                 replacement = Document(owner=request.user, kind=original.kind,
                     original_name=Path(upload.name).name[:255], size=upload.size,
-                    content_type=mime, in_vault=True, analysis_status=analysis['status'],
+                    content_type=mime, in_vault=True, is_simulated=analysis.get('source') == 'simulation', analysis_status=analysis['status'],
                     analysis_result=analysis, analyzed_at=timezone.now())
                 replacement.file.save(upload.name, upload, save=False)
                 replacement.save()
@@ -332,12 +369,15 @@ def reanalyze(request, doc_id):
         raise ApiError('Documento no encontrado.', 404)
     if doc.kind not in IDP_TYPES:
         raise ApiError('Este documento requiere revisión del área correspondiente.', 409)
+    if doc.attachment_set.exclude(application__status='draft').exists():
+        raise ApiError('Actualiza el documento desde el Baúl para conservar la revisión del expediente enviado.', 409)
     with doc.file.open('rb') as source:
-        result = inspect_document(source, doc.original_name, doc.kind)
+        result = analyze_upload(source, doc.kind, request.user, doc.original_name)
+    doc.is_simulated = result.get('source') == 'simulation'
     doc.analysis_status = result['status']
     doc.analysis_result = result
     doc.analyzed_at = timezone.now()
-    doc.save(update_fields=['analysis_status', 'analysis_result', 'analyzed_at'])
+    doc.save(update_fields=['is_simulated', 'analysis_status', 'analysis_result', 'analyzed_at'])
     return JsonResponse({'document': document_data(doc), 'message': result['message']})
 
 
@@ -361,7 +401,10 @@ def applications(request):
     with transaction.atomic():
         app = Application.objects.create(owner=request.user, procedure=procedure)
         for kind in CATALOG_BY_ID[procedure]['requirements']:
-            doc = Document.objects.filter(owner=request.user, in_vault=True, kind=kind, analysis_status='accepted').order_by('-created_at').first()
+            candidates = Document.objects.filter(owner=request.user, in_vault=True, kind=kind, analysis_status='accepted')
+            if not simulation_enabled(request.user):
+                candidates = candidates.filter(is_simulated=False)
+            doc = candidates.order_by('-created_at').first()
             if doc:
                 Attachment.objects.create(application=app, document=doc)
     return JsonResponse({'application': application_data(app)}, status=201)
@@ -394,7 +437,7 @@ def application_detail(request, app_id):
                 doc = Document.objects.filter(id=data['document_id'], owner=request.user, in_vault=True).first()
             except ValidationError:
                 doc = None
-            if not doc or doc.kind not in CATALOG_BY_ID[app.procedure]['requirements']:
+            if not doc or not document_usable(doc, request.user) or doc.kind not in CATALOG_BY_ID[app.procedure]['requirements']:
                 raise ApiError('Documento del Baúl no disponible para este trámite.')
             app.attachments.filter(document__kind=doc.kind).delete()
             Attachment.objects.create(application=app, document=doc)
@@ -413,7 +456,7 @@ def submit(request, app_id):
         kinds = set(app.attachments.values_list('document__kind', flat=True))
         if not set(rules['requirements']).issubset(kinds):
             raise ApiError('Completa todos los documentos antes de enviar la solicitud.')
-        if any(a.document.analysis_status != 'accepted'
+        if any(not document_usable(a.document, request.user)
                for a in app.attachments.select_related('document')):
             raise ApiError('Analiza o reemplaza los documentos pendientes antes de enviar la solicitud.')
         if rules['reference_required'] and not app.reference:
@@ -425,8 +468,10 @@ def submit(request, app_id):
         files = [(d.file.storage, d.file.name) for d in obsolete]
         app.temporary_documents.filter(in_vault=False).delete()
         transaction.on_commit(lambda: [storage.delete(name) for storage, name in files])
+        app.is_demo = app.attachments.filter(document__is_simulated=True).exists()
         app.status = 'submitted'
-        app.folio = f'ACA-{timezone.now():%Y}-{app.id.hex.upper()}'
+        # Conserva el UUID completo y cabe en los 40 caracteres del esquema.
+        app.folio = f'{"DEMO" if app.is_demo else "ACA"}-{app.id.hex.upper()}'
         app.submitted_at = timezone.now()
-        app.save(update_fields=['status', 'folio', 'submitted_at'])
+        app.save(update_fields=['is_demo', 'status', 'folio', 'submitted_at'])
     return JsonResponse({'application': application_data(app)}, status=201)

@@ -1,3 +1,4 @@
+import DependenciesPanel, { dependencyStatus } from './components/DependenciesPanel';
 import RequirementChecklist from "./components/RequirementChecklist";
 import PagoPredial from "./pages/PagoPredial";
 import Programas from "./pages/Programas";
@@ -411,12 +412,34 @@ export default function App() {
       setNotice("Solicitud registrada. Tus documentos ya están en el Baúl.");
     });
   }
+  async function exchangeDependencies(sync) {
+    await action(async () => {
+      try {
+        for (let step = 0; step < active.documents.length + 2; step++) {
+          const result = await api(`applications/${active.id}/dependencies/`, {
+            method: 'POST', data: { action: sync ? 'sync' : 'send', confirm_demo_files: !sync },
+          });
+          setActive(result.application);
+          if (sync || result.application.delivery.status === 'received') {
+            setNotice(sync ? 'Estado actualizado desde las dependencias.' : 'Expediente recibido por las dependencias.');
+            await refresh();
+            return;
+          }
+          setNotice(`Transferidos ${result.application.delivery.sent_files} archivos. Puedes reanudar si se interrumpe.`);
+        }
+        throw new Error('El envío sigue pendiente. Vuelve a intentar para continuar.');
+      } catch (error) {
+        try { setActive((await api(`applications/${active.id}/`)).application); } catch {}
+        throw error;
+      }
+    });
+  }
   const pending = apps.filter((a) => a.status === "submitted").length;
   const procedure = active && catalog.find((p) => p.id === active.procedure);
   const complete =
     active &&
     procedure?.requirements.every((kind) =>
-      active.documents.some((d) => d.kind === kind && d.analysis_status === 'accepted'),
+      active.documents.some((d) => d.kind === kind && d.analysis_status === 'accepted' && (!d.is_simulated || user.document_simulation_enabled)),
     );
 
   if (!ready)
@@ -519,6 +542,8 @@ export default function App() {
           <span className="prototype">ENTORNO DE PRUEBAS</span>
         </header>
         <main className="content">
+          {user.document_simulation_enabled && <div className="panel mb-4" role="status">Modo de demostración: las cargas omiten al bot. Los documentos y solicitudes se identificarán como simulados.</div>}
+          {active?.is_demo && <p className="badge">Expediente de demostración · sin validación real</p>}
           {error && (
             <div className="error flex justify-between gap-4" role="alert">
               {error}
@@ -563,7 +588,7 @@ export default function App() {
                 >
                   {active.status === "draft"
                     ? "Sin enviar"
-                    : "Solicitud recibida"}
+                    : dependencyStatus[active.status] || "Solicitud recibida"}
                 </span>
               </div>
               {active.status !== "draft" ? (
@@ -582,8 +607,7 @@ export default function App() {
                     <strong>{active.folio}</strong>
                   </div>
                   <p className="muted">
-                    Recibida el {date(active.submitted_at)}. Pendiente de
-                    revisión; no representa aprobación ni pago realizado.
+                    Recibida el {date(active.submitted_at)}. {dependencyStatus[active.status] || "Pendiente de revisión"}. No representa una aprobación oficial ni un pago realizado.
                   </p>
                   <div className="flex gap-3 justify-center flex-wrap mt-6">
                     <button
@@ -600,6 +624,7 @@ export default function App() {
                     </button>
                   </div>
                 </section>
+                <DependenciesPanel key={active.id} application={active} enabled={user.document_simulation_enabled} busy={busy} exchange={exchangeDependencies}/>
                 <RequirementChecklist procedure={procedure} application={active} docs={docs} types={types} busy={busy} readOnly/>
                 </>
               ) : (

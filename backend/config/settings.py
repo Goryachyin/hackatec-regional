@@ -100,3 +100,9 @@ if not DEBUG:
         not EMAIL_HOST.strip() or not os.getenv('DEFAULT_FROM_EMAIL', '').strip()
     ):
         raise RuntimeError('Configura EMAIL_HOST y DEFAULT_FROM_EMAIL para producción.')
+
+# Solo permite simulación a cuentas autorizadas explícitamente.
+DOCUMENT_SIMULATION_ENABLED = os.getenv("DOCUMENT_SIMULATION_ENABLED", "false").lower() == "true"
+DEPENDENCIES_URL = os.getenv('DEPENDENCIES_URL', '').rstrip('/')
+DEPENDENCIES_KEY = os.getenv('DEPENDENCIES_KEY', '')
+DEPENDENCIES_SOURCE = os.getenv('DEPENDENCIES_SOURCE', 'portal-render-demo')

@@ -14,7 +14,7 @@ export default function RequirementChecklist({ procedure, application, docs, typ
         <div className="section-heading"><h3>{group.name}</h3><span className="badge">{delivered} de {group.requirements.length} entregados</span></div>
         {group.requirements.map(kind => {
           const doc = application.documents.find(d => d.kind === kind);
-          const options = docs.filter(d => d.kind === kind);
+          const options = docs.filter(d => d.kind === kind && d.can_use_for_application !== false);
           return <div className="requirement-row" key={kind}>
             <div className="flex gap-3 items-start">
               <span className={`requirement-check ${doc ? 'done' : ''}`}>{doc ? <Check size={18}/> : <FileText size={18}/>}</span>

@@ -155,6 +155,9 @@ class IDPIntegrationTests(TestCase):
             doc.refresh_from_db(); self.assertTrue(doc.in_vault); self.assertIsNone(doc.temporary_for)
         again = self.client.post(f'/api/applications/{app.id}/submit/')
         self.assertEqual(again.json()['application']['folio'], response.json()['application']['folio'])
+        folio = response.json()['application']['folio']
+        self.assertLessEqual(len(folio), Application._meta.get_field('folio').max_length)
+        self.assertTrue(folio.endswith(app.id.hex.upper()))
 
     def test_rejected_not_stored(self):
         result = accepted(); result.update(status='rejected', document_type='cfe', message='Tipo incorrecto')

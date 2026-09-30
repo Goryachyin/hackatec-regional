@@ -5,8 +5,9 @@ export function AnalysisResult({ doc, busy, onAnalyze }) {
   const result = doc.analysis || {};
   return <div className="mt-4 text-sm" aria-live="polite">
     <span className={`badge ${doc.analysis_status === 'accepted' ? '' : 'draft'}`}>
-      {doc.analysis_status === 'accepted' ? 'Campos mínimos comprobados' : doc.analysis_status === 'received' ? 'Entregado · pendiente de revisión' : doc.analysis_status === 'not_analyzed' ? 'Pendiente de análisis' : 'Requiere corrección'}
+      {doc.is_simulated ? 'Revisión simulada' : doc.analysis_status === 'accepted' ? 'Campos mínimos comprobados' : doc.analysis_status === 'received' ? 'Entregado · pendiente de revisión' : doc.analysis_status === 'not_analyzed' ? 'Pendiente de análisis' : 'Requiere corrección'}
     </span>
+    {doc.is_simulated && doc.can_use_for_application === false && <p className="muted mt-3">Simulación deshabilitada: vuelve a analizar con el bot o actualiza este documento para utilizarlo.</p>}
     {result.message && <p className="muted mt-3">{result.message}</p>}
     {result.extracted_data && <details className="mt-3">
       <summary className="cursor-pointer text-[#315e4f]">Ver datos extraídos</summary>

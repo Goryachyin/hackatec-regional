@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: hackatec-dependencias
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./dependencias/Dockerfile
+    dockerContext: ./dependencias
+    healthCheckPath: /health/
+    preDeployCommand: python manage.py migrate --noinput
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: INTEGRATION_SOURCE
+        value: portal-render-demo
+      - key: INTEGRATION_KEY
+        sync: false
