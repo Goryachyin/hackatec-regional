@@ -1,4 +1,3 @@
-import Notifications from './components/Notifications';
 import PrivacyLink from './components/PrivacyLink';
 import AlebrijeChat from './components/AlebrijeChat';
 import DependenciesPanel, { dependencyStatus } from './components/DependenciesPanel';
@@ -33,7 +32,7 @@ function Spinner() {
   return <LoaderCircle className="animate-spin" size={18} />;
 }
 
-function Auth({ onSuccess, serviceError = '', onClearServiceError }) {
+function Auth({ onSuccess }) {
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState({
     curp: "",
@@ -106,11 +105,16 @@ function Auth({ onSuccess, serviceError = '', onClearServiceError }) {
             Un espacio para organizar tus documentos y dar el siguiente paso,
             sin empezar de nuevo.
           </p>
-          <div className="alebrije-index">
-              <img src="/alebrije-transparente.png" alt="Alebrije" />
+          <div className="auth-benefits">
+            <span>
+              <FolderLock /> Documentos en un solo lugar
+            </span>
+            <span>
+              <ClipboardList /> Seguimiento con folio
+            </span>
           </div>
         </div>
-        <small>Prototipo de desarrollo - EVA06 - HackaTec 2026</small>
+        <small>Prototipo de desarrollo · HackaTec 2026</small>
       </section>
       <section className="auth-form">
         <div className="auth-card">
@@ -198,7 +202,16 @@ function Auth({ onSuccess, serviceError = '', onClearServiceError }) {
                 />
               </label>
             )}
-            <Notifications error={error || serviceError} notice={notice} onClearError={() => { setError(''); onClearServiceError?.(); }} onClearNotice={() => setNotice('')}/>
+            {error && (
+              <p className="error" role="alert">
+                {error}
+              </p>
+            )}
+            {notice && (
+              <p className="success" role="status">
+                {notice}
+              </p>
+            )}
             <button className="primary w-full justify-center" disabled={busy}>
               {busy ? <Spinner /> : <ArrowRight size={18} />}{" "}
               {mode === "register"
@@ -441,7 +454,12 @@ export default function App() {
   if (!user)
     return (
       <>
-        <Auth serviceError={error} onClearServiceError={() => setError("")}
+        {error && (
+          <div className="error global-error" role="alert">
+            {error} Comprueba que Django esté ejecutándose y recarga.
+          </div>
+        )}
+        <Auth
           onSuccess={(value) => {
             setError("");
             setUser(value);
@@ -530,7 +548,20 @@ export default function App() {
         <main className="content">
           {user.document_simulation_enabled && <div className="panel mb-4" role="status">Modo de demostración: las cargas omiten al bot. Los documentos y solicitudes se identificarán como simulados.</div>}
           {active?.is_demo && <p className="badge">Modo prueba</p>}
-          <Notifications error={error} notice={notice} onClearError={() => setError('')} onClearNotice={() => setNotice('')}/>
+          {error && (
+            <div className="error flex justify-between gap-4" role="alert">
+              {error}
+              <button aria-label="Cerrar error" onClick={() => setError("")}>
+                <X size={16} />
+              </button>
+            </div>
+          )}
+          {notice && (
+            <div className="success flex gap-2" role="status">
+              <CheckCircle2 size={18} />
+              {notice}
+            </div>
+          )}
           {loading && (
             <div className="flex gap-2 muted" role="status">
               <Spinner /> Cargando tu información…

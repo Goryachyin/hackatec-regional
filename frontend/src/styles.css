@@ -1104,35 +1104,6 @@ nav button:hover {
     background: #416458
 }
 
-.auth-intro>div:not(.brand) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(150px, .75fr);
-    align-items: center;
-    column-gap: 20px
-}
-
-.auth-intro>div:not(.brand)>.eyebrow,
-.auth-intro h1,
-.auth-intro p {
-    grid-column: 1
-}
-
-.alebrije-index {
-    grid-column: 2;
-    grid-row: 1 / 4;
-    display: flex;
-    align-items: center;
-    justify-content: center
-}
-
-.alebrije-index img {
-    display: block;
-    width: 100%;
-    max-width: 500px;
-    height: auto;
-    object-fit: contain
-}
-
 .auth-intro h1 {
     font-size: 54px;
     line-height: 1.15;
