@@ -5,6 +5,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/api/:path*/", "destination": "https://hackatec-backend.onrender.com/api/:path*/" },
     { "source": "/api/:path*", "destination": "https://hackatec-backend.onrender.com/api/:path*" }
   ],
   "headers": [
