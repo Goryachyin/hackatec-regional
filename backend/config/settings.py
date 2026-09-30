@@ -85,12 +85,16 @@ IDP_BOT_URL = os.getenv('IDP_BOT_URL', 'https://hackatec-idp-bot.onrender.com').
 IDP_API_KEY = os.getenv('IDP_API_KEY', 'local-development-key' if DEBUG else '')
 IDP_TIMEOUT = int(os.getenv('IDP_TIMEOUT', '120'))
 
+EMAIL_DEMO_MODE = os.getenv('EMAIL_DEMO_MODE', 'false').lower() == 'true'
+if EMAIL_DEMO_MODE:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 if not DEBUG:
     if not IDP_BOT_URL.startswith(('https://', 'http://')):
         raise RuntimeError('IDP_BOT_URL debe ser una URL HTTP interna o HTTPS pública.')
     if len(IDP_API_KEY.strip()) < 32:
         raise RuntimeError('Configura IDP_API_KEY con al menos 32 caracteres aleatorios.')
-    if EMAIL_BACKEND == 'django.core.mail.backends.console.EmailBackend':
+    if EMAIL_BACKEND == 'django.core.mail.backends.console.EmailBackend' and not EMAIL_DEMO_MODE:
         raise RuntimeError('Configura un proveedor de correo para producción.')
     if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and (
         not EMAIL_HOST.strip() or not os.getenv('DEFAULT_FROM_EMAIL', '').strip()

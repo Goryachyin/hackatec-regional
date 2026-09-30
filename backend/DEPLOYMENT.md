@@ -63,6 +63,13 @@ La aplicación rechaza el arranque de producción si faltan PostgreSQL, bucket/c
 
 ## Migraciones y comprobación
 
+Para una demostración sin proveedor de correo, configurar `EMAIL_DEMO_MODE=true`
+en Render. Fuerza el correo en consola y permite arrancar sin EMAIL_HOST ni
+DEFAULT_FROM_EMAIL. Los códigos de registro aparecen en los logs del backend;
+no se envían correos y la verificación de registro sigue siendo obligatoria.
+Usar únicamente cuentas de prueba. Para habilitar correo real, configurar SMTP
+y cambiar EMAIL_DEMO_MODE a false. No habilitar DJANGO_DEBUG en producción.
+
 En un plan que admita **Pre-Deploy Command**, configurar `python manage.py migrate --noinput`. En planes sin ese comando, ejecutar la misma migración una sola vez desde un entorno controlado con el mismo commit y las variables de producción del servicio; no ejecutar migraciones concurrentemente desde cada worker al arrancar.
 
 Después del despliegue, comprobar `https://<backend>/api/health/`. Antes de usar datos reales, validar registro y correo, login, carga/descarga autenticada en el Baúl, análisis del bot y envío de solicitudes.
