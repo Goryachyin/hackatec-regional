@@ -7,7 +7,6 @@ from datetime import date
 from pathlib import Path
 from PIL import Image, ImageOps
 from pypdf import PdfReader
-import pypdfium2 as pdfium
 
 MAX_BYTES = 10 * 1024 * 1024
 MAX_PAGES = 10
@@ -42,6 +41,7 @@ def ocr_image(image):
     return '\n'.join(str(row[1]) for row in (result or []) if float(row[2]) >= 0.5)
 
 def extract_pages(data, filename, force_ocr=False):
+    import pypdfium2 as pdfium
     if not data or len(data) > MAX_BYTES:
         raise DocumentError('Carga un archivo no vacío de hasta 10 MB.', 'invalid_size', 413)
     suffix = Path(filename).suffix.lower()

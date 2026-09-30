@@ -13,13 +13,21 @@ gate = threading.Lock()
 
 @asynccontextmanager
 async def lifespan(app):
+    if os.getenv('IDP_ENV') == 'production':
+        key = os.getenv('IDP_API_KEY', '').strip()
+        if len(key) < 32 or key == 'local-development-key':
+            raise RuntimeError('Configura IDP_API_KEY con al menos 32 caracteres aleatorios.')
+        if os.getenv('IDP_PROVIDER') != 'openai' or not os.getenv('OPENAI_API_KEY', '').strip():
+            raise RuntimeError('Configura IDP_PROVIDER=openai y OPENAI_API_KEY.')
     if os.getenv('IDP_PROVIDER', 'local') == 'local':
         get_engine()
     elif os.getenv('IDP_PROVIDER') != 'openai':
         raise RuntimeError('IDP_PROVIDER debe ser local u openai')
     yield
 
-app = FastAPI(title='IDP local · INE, CFE y CURP', version='2.0.0', lifespan=lifespan)
+app = FastAPI(title='Portal ciudadano · IDP', version='2.1.0', lifespan=lifespan,
+              docs_url=None if os.getenv('IDP_ENV') == 'production' else '/docs',
+              redoc_url=None if os.getenv('IDP_ENV') == 'production' else '/redoc')
 
 @app.middleware('http')
 async def protect_upload(request, call_next):

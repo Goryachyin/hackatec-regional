@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: hackatec-idp-bot
+    runtime: docker
+    plan: free
+    dockerfilePath: ./idp-bot/Dockerfile.render
+    dockerContext: ./idp-bot
+    healthCheckPath: /health/
+    envVars:
+      - key: IDP_ENV
+        value: production
+      - key: IDP_PROVIDER
+        value: openai
+      - key: IDP_API_KEY
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4.1
