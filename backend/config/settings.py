@@ -106,3 +106,8 @@ DOCUMENT_SIMULATION_ENABLED = os.getenv("DOCUMENT_SIMULATION_ENABLED", "false").
 DEPENDENCIES_URL = os.getenv('DEPENDENCIES_URL', '').rstrip('/')
 DEPENDENCIES_KEY = os.getenv('DEPENDENCIES_KEY', '')
 DEPENDENCIES_SOURCE = os.getenv('DEPENDENCIES_SOURCE', 'portal-render-demo')
+
+CHATBOT_ENABLED = os.getenv('CHATBOT_ENABLED', 'false').lower() == 'true'
+CHATBOT_OPENAI_API_KEY = os.getenv('CHATBOT_OPENAI_API_KEY', '')
+CHATBOT_MODEL = os.getenv('CHATBOT_MODEL', 'gpt-4.1-mini')
+CHATBOT_TRANSCRIBE_MODEL = os.getenv('CHATBOT_TRANSCRIBE_MODEL', 'gpt-transcribe')

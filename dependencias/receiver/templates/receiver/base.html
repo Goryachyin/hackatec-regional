@@ -1,3 +1,169 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dependencias · Acapulco Demo</title><style>
-:root{font-family:system-ui,sans-serif;color:#203e36;background:#f4f6f2}*{box-sizing:border-box}body{margin:0}header{background:#214e42;color:white;padding:22px max(5vw,20px);display:flex;align-items:center;justify-content:space-between;gap:20px}header a{color:white;text-decoration:none}header small{display:block;opacity:.8;margin-top:6px}main{max-width:1100px;margin:36px auto;padding:0 20px}.panel{background:white;border:1px solid #dce3d8;border-radius:16px;padding:24px;margin:20px 0}.badge{display:inline-block;background:#edf0df;border-radius:20px;padding:7px 12px;font-size:13px}h1{font-size:32px;letter-spacing:-1px}h2{font-size:21px}.muted{color:#677b70}button,.button{display:inline-block;border:0;border-radius:8px;background:#214e42;color:white;padding:12px 18px;cursor:pointer;text-decoration:none;font-size:15px}.reject{background:#8a3434}input,textarea{display:block;width:100%;padding:12px;margin:10px 0 18px;border:1px solid #abbcac;border-radius:8px;font:inherit}label{font-weight:600}.row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 0;border-bottom:1px solid #eee;flex-wrap:wrap}.folio{overflow-wrap:anywhere}a{color:#275c4b}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px}.error{color:#8a3434}.actions{display:flex;gap:10px;flex-wrap:wrap}small{line-height:1.5}header form{margin:0}.status-approved{color:#256235}.status-rejected{color:#9b3030}
-</style></head><body><header><a href="/"><strong>ACAPULCO · DEPENDENCIAS</strong><small>Recepción y dictamen · Entorno de demostración</small></a>{% if user.is_authenticated %}<form method="post" action="/logout/">{% csrf_token %}<button>Cerrar sesión</button></form>{% endif %}</header><main>{% block content %}{% endblock %}</main></body></html>
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dependencias de Acapulco - Prueba</title>
+    <style>
+        :root {
+            font-family: system-ui, sans-serif;
+            color: #203e36;
+            background: #f4f6f2
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0
+        }
+
+        header {
+            background: #214e42;
+            color: white;
+            padding: 22px max(5vw, 20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px
+        }
+
+        header a {
+            color: white;
+            text-decoration: none
+        }
+
+        header small {
+            display: block;
+            opacity: .8;
+            margin-top: 6px
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 36px auto;
+            padding: 0 20px
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid #dce3d8;
+            border-radius: 16px;
+            padding: 24px;
+            margin: 20px 0
+        }
+
+        .badge {
+            display: inline-block;
+            background: #edf0df;
+            border-radius: 20px;
+            padding: 7px 12px;
+            font-size: 13px
+        }
+
+        h1 {
+            font-size: 32px;
+            letter-spacing: -1px
+        }
+
+        h2 {
+            font-size: 21px
+        }
+
+        .muted {
+            color: #677b70
+        }
+
+        button,
+        .button {
+            display: inline-block;
+            border: 0;
+            border-radius: 8px;
+            background: #214e42;
+            color: white;
+            padding: 12px 18px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 15px
+        }
+
+        .reject {
+            background: #8a3434
+        }
+
+        input,
+        textarea {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 18px;
+            border: 1px solid #abbcac;
+            border-radius: 8px;
+            font: inherit
+        }
+
+        label {
+            font-weight: 600
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 20px 0;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap
+        }
+
+        .folio {
+            overflow-wrap: anywhere
+        }
+
+        a {
+            color: #275c4b
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 18px
+        }
+
+        .error {
+            color: #8a3434
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap
+        }
+
+        small {
+            line-height: 1.5
+        }
+
+        header form {
+            margin: 0
+        }
+
+        .status-approved {
+            color: #256235
+        }
+
+        .status-rejected {
+            color: #9b3030
+        }
+    </style>
+</head>
+
+<body>
+    <header><a href="/"><strong>ACAPULCO - DEPENDENCIAS</strong><small>Recepción de solicitudes de trámites</small></a>{% if user.is_authenticated %}<form method="post" action="/logout/">{%
+            csrf_token %}<button>Cerrar sesión</button></form>{% endif %}</header>
+    <main>{% block content %}{% endblock %}</main>
+</body>
+
+</html>

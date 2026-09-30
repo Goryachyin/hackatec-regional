@@ -1,3 +1,4 @@
+import AlebrijeChat from './components/AlebrijeChat';
 import DependenciesPanel, { dependencyStatus } from './components/DependenciesPanel';
 import RequirementChecklist from "./components/RequirementChecklist";
 import PagoPredial from "./pages/PagoPredial";
@@ -365,7 +366,7 @@ export default function App() {
       await refresh();
       setNotice(
         appId
-          ? `${result.message} Se guardará en tu Baúl al enviar la solicitud.`
+          ? `${result.message} Se guardará en tus documentos al enviar la solicitud.`
           : `${result.message} Documento guardado en tu Baúl.`,
       );
     });
@@ -381,7 +382,7 @@ export default function App() {
     });
   }
   async function deleteDocument(doc) {
-    if (!window.confirm(`¿Eliminar "${doc.name}" del Baúl? Si está vinculado a un trámite, se conservará en ese expediente.`)) return;
+    if (!window.confirm(`¿Eliminar "${doc.name}" de tus documentos? Si está vinculado a un trámite, se conservará en ese expediente.`)) return;
     await action(async () => {
       const result = await api(`documents/${doc.id}/`, { method: 'DELETE' });
       await refresh();
@@ -543,7 +544,7 @@ export default function App() {
         </header>
         <main className="content">
           {user.document_simulation_enabled && <div className="panel mb-4" role="status">Modo de demostración: las cargas omiten al bot. Los documentos y solicitudes se identificarán como simulados.</div>}
-          {active?.is_demo && <p className="badge">Expediente de demostración · sin validación real</p>}
+          {active?.is_demo && <p className="badge">Modo prueba</p>}
           {error && (
             <div className="error flex justify-between gap-4" role="alert">
               {error}
@@ -719,6 +720,12 @@ export default function App() {
           </section>
         </div>
       )}
+      <AlebrijeChat application={active} blocked={busy} navigate={target => {
+        if (target.page === 'request') {
+          if (active?.status === 'draft') { navigate('applications'); return; }
+          open({ id: target.application_id });
+        } else navigate(target.page);
+      }}/>
     </div>
   );
 }

@@ -1,1 +1,25 @@
-{% extends 'receiver/base.html' %}{% block content %}<a href="/">← Volver a la bandeja</a><h1>Licencia de funcionamiento</h1><span class="badge">Expediente de demostración</span><h2 class="folio">{{ dossier.folio }}</h2><p class="muted">Cada área emite una resolución. Tres aprobaciones completan la aprobación simulada; un rechazo determina el rechazo. No constituye un dictamen municipal.</p><section class="panel"><h2>Documentos disponibles para tu área</h2>{% for file in files %}<div class="row"><div><strong>{{ file.kind }}</strong><p>{{ file.name }}</p></div><a href="/documentos/{{ file.id }}/">Descargar copia</a></div>{% endfor %}</section><div class="grid">{% for area in data.areas %}<section class="panel"><h2>{{ area.name }}</h2><p class="status-{{ area.status }}">{% if area.status == 'approved' %}Aprobada{% elif area.status == 'rejected' %}Rechazada{% else %}Pendiente de revisión{% endif %}</p>{% if area.notes %}<p>{{ area.notes }}</p>{% endif %}{% if area.decided_at %}<small>{{ area.decided_at }}</small>{% endif %}{% if area.can_decide %}<form method="post" action="/expedientes/{{ dossier.id }}/resolver/{{ area.area }}/">{% csrf_token %}<label for="notes-{{ area.area }}">Observaciones</label><textarea id="notes-{{ area.area }}" name="notes" maxlength="2000" rows="4" placeholder="Obligatorias al rechazar"></textarea><p class="muted"><small>La resolución quedará registrada y no podrá editarse.</small></p><div class="actions"><button name="outcome" value="approved">Aprobar</button><button class="reject" name="outcome" value="rejected">Rechazar</button></div></form>{% endif %}</section>{% endfor %}</div>{% endblock %}
+{% extends 'receiver/base.html' %}{% block content %}<a href="/">← Volver a la bandeja</a>
+<h1>Licencia de funcionamiento</h1><span class="badge">Expediente de demostración</span>
+<h2 class="folio">{{ dossier.folio }}</h2>
+<p class="muted">Cada área emite una resolución. Tres aprobaciones completan la aprobación simulada; un rechazo
+    determina el rechazo. No constituye un dictamen municipal.</p>
+<section class="panel">
+    <h2>Documentos disponibles para tu área</h2>{% for file in files %}<div class="row">
+        <div><strong>{{ file.kind }}</strong>
+            <p>{{ file.name }}</p>
+        </div><a href="/documentos/{{ file.id }}/">Descargar copia</a>
+    </div>{% endfor %}
+</section>
+<div class="grid">{% for area in data.areas %}<section class="panel">
+        <h2>{{ area.name }}</h2>
+        <p class="status-{{ area.status }}">{% if area.status == 'approved' %}Aprobada{% elif area.status == 'rejected'
+            %}Rechazada{% else %}Pendiente de revisión{% endif %}</p>{% if area.notes %}<p>{{ area.notes }}</p>{% endif
+        %}{% if area.decided_at %}<small>{{ area.decided_at }}</small>{% endif %}{% if area.can_decide %}<form
+            method="post" action="/expedientes/{{ dossier.id }}/resolver/{{ area.area }}/">{% csrf_token %}<label
+                for="notes-{{ area.area }}">Observaciones</label><textarea id="notes-{{ area.area }}" name="notes"
+                maxlength="2000" rows="4" placeholder="Obligatorias al rechazar"></textarea>
+            <p class="muted"><small>La resolución quedará registrada y no podrá editarse.</small></p>
+            <div class="actions"><button name="outcome" value="approved">Aprobar</button><button class="reject"
+                    name="outcome" value="rejected">Rechazar</button></div>
+        </form>{% endif %}
+    </section>{% endfor %}</div>{% endblock %}
